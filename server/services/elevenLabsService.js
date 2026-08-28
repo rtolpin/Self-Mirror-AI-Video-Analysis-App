@@ -8,6 +8,21 @@ function apiKey() {
   return key;
 }
 
+// Thrown instead of the generic synthesis error when ElevenLabs reports the
+// voice itself doesn't exist (deleted from the dashboard, evicted for a plan
+// limit, or cloned under a different ELEVENLABS_API_KEY than the one now
+// deployed) — callers use this to clear the stale voice_id instead of
+// leaving the user stuck retrying against an ID that will never work again.
+export class VoiceNotFoundError extends Error {}
+
+async function throwSynthesisError(res, label) {
+  const body = await res.text();
+  if (res.status === 404 && body.includes('voice_not_found')) {
+    throw new VoiceNotFoundError(`${label} failed (${res.status}): ${body}`);
+  }
+  throw new Error(`${label} failed (${res.status}): ${body}`);
+}
+
 // Bracketed stage directions like "[laughs]" or "[chuckles]" sometimes show
 // up in transcripts or in Claude's rewritten text, but eleven_multilingual_v2
 // (the model used here) doesn't treat them as non-verbal cues the way
@@ -53,10 +68,7 @@ export async function synthesizeSpeech({ voiceId, text }) {
     }),
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`ElevenLabs speech synthesis failed (${res.status}): ${body}`);
-  }
+  if (!res.ok) await throwSynthesisError(res, 'ElevenLabs speech synthesis');
 
   const arrayBuffer = await res.arrayBuffer();
   return Buffer.from(arrayBuffer);
@@ -81,10 +93,7 @@ export async function synthesizeSpeechStream({ voiceId, text }) {
     }),
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`ElevenLabs speech synthesis failed (${res.status}): ${body}`);
-  }
+  if (!res.ok) await throwSynthesisError(res, 'ElevenLabs speech synthesis');
 
   return res.body;
 }

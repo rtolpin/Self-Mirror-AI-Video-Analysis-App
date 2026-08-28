@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import db, { getTwinProfile, upsertTwinProfile, toISO } from '../services/db.js';
 import { UPLOADS_DIR } from './sessions.js';
 import { buildTwinProfile, predictScenario, generateLifePaths } from '../services/claudeService.js';
-import { cloneVoice, synthesizeSpeech, synthesizeSpeechStream, deleteVoice } from '../services/elevenLabsService.js';
+import { cloneVoice, synthesizeSpeech, synthesizeSpeechStream, deleteVoice, VoiceNotFoundError } from '../services/elevenLabsService.js';
 import {
   uploadAsset,
   createDigitalTwinAvatar,
@@ -32,6 +32,16 @@ function getOwnedVariant(variantId, userId) {
     JOIN sessions s ON v.session_id = s.id
     WHERE v.id = ? AND s.user_id = ?
   `).get(variantId, userId);
+}
+
+// ElevenLabs voices can disappear out from under a stored voice_id — deleted
+// from the dashboard, evicted for a plan limit, or cloned under a since-
+// rotated ELEVENLABS_API_KEY. Without this, every future request for that
+// user would keep 404ing against an ID that can never work again.
+const STALE_VOICE_MESSAGE = 'Your cloned voice is no longer available. Please record it again in My Twin.';
+
+function clearStaleVoice(userId) {
+  db.prepare('UPDATE twin_profile SET voice_id = NULL WHERE user_id = ?').run(userId);
 }
 
 function toClientProfile(row) {
@@ -199,6 +209,10 @@ router.get('/speak', async (req, res) => {
     res.set('Content-Type', 'audio/mpeg');
     Readable.fromWeb(stream).pipe(res);
   } catch (err) {
+    if (err instanceof VoiceNotFoundError) {
+      clearStaleVoice(req.userId);
+      return res.status(400).json({ error: STALE_VOICE_MESSAGE });
+    }
     res.status(500).json({ error: err.message });
   }
 });
@@ -229,6 +243,10 @@ router.post('/variant-video/:variantId', async (req, res) => {
     res.json({ videoStatus: 'generating' });
   } catch (err) {
     db.prepare('UPDATE variants SET video_status = ? WHERE id = ?').run('failed', variant.id);
+    if (err instanceof VoiceNotFoundError) {
+      clearStaleVoice(req.userId);
+      return res.status(400).json({ error: STALE_VOICE_MESSAGE });
+    }
     res.status(500).json({ error: err.message });
   } finally {
     if (tempAudioPath) unlink(tempAudioPath).catch(() => {});
@@ -299,6 +317,10 @@ router.post('/variant-dub/:variantId', async (req, res) => {
     db.prepare('UPDATE variants SET dub_video_path = ? WHERE id = ?').run(outputFilename, variant.id);
     res.json({ dubVideoUrl: `/uploads/${outputFilename}` });
   } catch (err) {
+    if (err instanceof VoiceNotFoundError) {
+      clearStaleVoice(req.userId);
+      return res.status(400).json({ error: STALE_VOICE_MESSAGE });
+    }
     res.status(500).json({ error: err.message });
   } finally {
     if (tempAudioPath) unlink(tempAudioPath).catch(() => {});
