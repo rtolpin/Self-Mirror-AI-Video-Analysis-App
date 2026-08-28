@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, Volume2, Trash2, Loader2, TrendingUp, CheckCircle2, Gauge, Smile, Compass, Film, Mic2, X } from 'lucide-react';
+import { Sparkles, Volume2, Trash2, Loader2, TrendingUp, CheckCircle2, Gauge, Smile, Compass, Film, Mic2, X, Square } from 'lucide-react';
 import { api } from '../api.js';
 import { STYLE_LABELS } from '../styles.js';
 import LoadingState from './LoadingState.jsx';
@@ -40,6 +40,7 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
   const [error, setError] = useState(null);
   const [generatingStyle, setGeneratingStyle] = useState(null);
   const [speakingStyle, setSpeakingStyle] = useState(null);
+  const speakingAudioRef = useRef(null);
   const [dubbingVariantId, setDubbingVariantId] = useState(null);
   const [pendingStyleKey, setPendingStyleKey] = useState(null);
   const [showCloneModal, setShowCloneModal] = useState(false);
@@ -216,18 +217,27 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
     handleGenerateVariant(styleKey);
   }
 
-  async function handlePlay(style, text) {
+  function handlePlay(style, text) {
+    // Clicking the same style again while it's already playing stops it,
+    // instead of the button just being disabled with no way to cancel.
+    if (speakingStyle === style) {
+      speakingAudioRef.current?.pause();
+      speakingAudioRef.current = null;
+      setSpeakingStyle(null);
+      return;
+    }
+    speakingAudioRef.current?.pause();
+    setError(null);
+    const audio = new Audio(api.getSpeakUrl(text));
+    audio.onended = () => { setSpeakingStyle(null); speakingAudioRef.current = null; };
+    audio.onerror = () => { setError('Playback failed.'); setSpeakingStyle(null); speakingAudioRef.current = null; };
+    speakingAudioRef.current = audio;
     setSpeakingStyle(style);
-    try {
-      const blob = await api.speak(text);
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => setSpeakingStyle(null);
-      await audio.play();
-    } catch (err) {
+    audio.play().catch((err) => {
       setError(err.message);
       setSpeakingStyle(null);
-    }
+      speakingAudioRef.current = null;
+    });
   }
 
   if (!session) return <LoadingState />;
@@ -285,10 +295,11 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
               {hasVoice && (
                 <button
                   onClick={() => handlePlay(ANALYSIS_AUDIO_KEY, buildAnalysisNarration(analysis))}
-                  disabled={speakingStyle === ANALYSIS_AUDIO_KEY}
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-sky-400/40 bg-sky-400/10 text-sky-300 hover:bg-sky-400/20 hover:border-sky-400/70 flex items-center gap-1.5 disabled:opacity-50 transition"
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-sky-400/40 bg-sky-400/10 text-sky-300 hover:bg-sky-400/20 hover:border-sky-400/70 flex items-center gap-1.5 transition"
                 >
-                  <Volume2 className="w-3.5 h-3.5" /> {speakingStyle === ANALYSIS_AUDIO_KEY ? 'Playing…' : 'Read Aloud'}
+                  {speakingStyle === ANALYSIS_AUDIO_KEY
+                    ? <><Square className="w-3.5 h-3.5" /> Stop Reading Aloud</>
+                    : <><Volume2 className="w-3.5 h-3.5" /> Read Aloud</>}
                 </button>
               )}
               <button

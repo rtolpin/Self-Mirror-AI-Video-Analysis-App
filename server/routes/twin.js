@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { join } from 'path';
+import { Readable } from 'stream';
 import { unlink, writeFile } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import db, { getTwinProfile, upsertTwinProfile, toISO } from '../services/db.js';
 import { UPLOADS_DIR } from './sessions.js';
 import { buildTwinProfile, predictScenario, generateLifePaths } from '../services/claudeService.js';
-import { cloneVoice, synthesizeSpeech, deleteVoice } from '../services/elevenLabsService.js';
+import { cloneVoice, synthesizeSpeech, synthesizeSpeechStream, deleteVoice } from '../services/elevenLabsService.js';
 import {
   uploadAsset,
   createDigitalTwinAvatar,
@@ -179,16 +180,24 @@ router.delete('/video-avatar', async (req, res) => {
   }
 });
 
-router.post('/speak', async (req, res) => {
+// GET (not POST) specifically so an <audio src="..."> element can request
+// this directly — the browser starts playing an MP3 as bytes arrive rather
+// than waiting for the whole thing, but only if it's the one making the
+// request itself; a fetch-then-blob round trip on the client always waits
+// for the full body first no matter what the server does. Piping ElevenLabs'
+// own streaming response straight through (instead of buffering it, like
+// synthesizeSpeech does for the dub/video pipeline) means neither side ever
+// holds the complete file in memory before the audio starts playing.
+router.get('/speak', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text } = req.query;
     if (!text) return res.status(400).json({ error: 'text is required' });
     const profile = getTwinProfile(req.userId);
     if (!profile?.voice_id) return res.status(400).json({ error: 'No cloned voice yet. Upload a voice sample first.' });
 
-    const audio = await synthesizeSpeech({ voiceId: profile.voice_id, text });
+    const stream = await synthesizeSpeechStream({ voiceId: profile.voice_id, text });
     res.set('Content-Type', 'audio/mpeg');
-    res.send(audio);
+    Readable.fromWeb(stream).pipe(res);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

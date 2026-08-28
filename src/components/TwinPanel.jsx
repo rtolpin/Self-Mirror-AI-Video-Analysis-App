@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, Video, Volume2, Trash2, Loader2, CheckCircle2, Clock, MessageSquare, Brain, Heart, UserCircle2 } from 'lucide-react';
+import { Sparkles, Video, Volume2, Trash2, Loader2, CheckCircle2, Clock, MessageSquare, Brain, Heart, UserCircle2, Square } from 'lucide-react';
 import { api } from '../api.js';
 import EmptyState from './EmptyState.jsx';
 import LoadingState from './LoadingState.jsx';
@@ -33,6 +33,7 @@ export default function TwinPanel({ onProfileChange, onStartSession, buildingTwi
 
   const [testText, setTestText] = useState("Hi, it's really me — or at least, an echo of me.");
   const [speaking, setSpeaking] = useState(false);
+  const speakingAudioRef = useRef(null);
   const [confirmAction, setConfirmAction] = useState(null); // 'voice' | 'videoAvatar'
 
   useEffect(() => {
@@ -106,18 +107,24 @@ export default function TwinPanel({ onProfileChange, onStartSession, buildingTwi
     }
   }
 
-  async function handleTestSpeak() {
-    setSpeaking(true);
+  function handleTestSpeak() {
+    if (speaking) {
+      speakingAudioRef.current?.pause();
+      speakingAudioRef.current = null;
+      setSpeaking(false);
+      return;
+    }
     setError(null);
-    try {
-      const blob = await api.speak(testText);
-      const audio = new Audio(URL.createObjectURL(blob));
-      audio.onended = () => setSpeaking(false);
-      await audio.play();
-    } catch (err) {
+    const audio = new Audio(api.getSpeakUrl(testText));
+    audio.onended = () => { setSpeaking(false); speakingAudioRef.current = null; };
+    audio.onerror = () => { setError('Playback failed.'); setSpeaking(false); speakingAudioRef.current = null; };
+    speakingAudioRef.current = audio;
+    setSpeaking(true);
+    audio.play().catch((err) => {
       setError(err.message);
       setSpeaking(false);
-    }
+      speakingAudioRef.current = null;
+    });
   }
 
   if (!loaded) return <LoadingState />;
@@ -279,8 +286,8 @@ export default function TwinPanel({ onProfileChange, onStartSession, buildingTwi
                 onChange={(e) => setTestText(e.target.value)}
                 className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm"
               />
-              <button onClick={handleTestSpeak} disabled={speaking} className="bg-white text-black px-3 rounded-lg flex items-center gap-1.5 text-sm">
-                <Volume2 className="w-3.5 h-3.5" /> {speaking ? 'Playing…' : 'Speak'}
+              <button onClick={handleTestSpeak} className="bg-white text-black px-3 rounded-lg flex items-center gap-1.5 text-sm">
+                {speaking ? <><Square className="w-3.5 h-3.5" /> Stop</> : <><Volume2 className="w-3.5 h-3.5" /> Speak</>}
               </button>
             </div>
             <div className="flex items-center gap-4">

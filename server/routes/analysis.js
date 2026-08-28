@@ -16,7 +16,12 @@ const MEDIA_TYPES = {
 
 async function loadImages(photoPaths) {
   const images = [];
-  for (const relPath of photoPaths.slice(0, 4)) {
+  // Fewer images measurably speeds up Claude's vision processing without a
+  // meaningful loss of context — captured frames are seconds apart from the
+  // same short clip, so 2 well-spread ones (first + last) carry almost all
+  // the same posture/expression signal as 4.
+  const spread = photoPaths.length > 2 ? [photoPaths[0], photoPaths[photoPaths.length - 1]] : photoPaths;
+  for (const relPath of spread.slice(0, 2)) {
     const ext = relPath.slice(relPath.lastIndexOf('.')).toLowerCase();
     const mediaType = MEDIA_TYPES[ext];
     if (!mediaType) continue;

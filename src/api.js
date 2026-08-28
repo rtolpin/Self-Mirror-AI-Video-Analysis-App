@@ -67,18 +67,12 @@ export const api = {
   getVariantVideoStatus: (variantId) => fetch(`/api/twin/variant-video/${variantId}/status`).then(handle),
   dubVariantVideo: (variantId) => fetch(`/api/twin/variant-dub/${variantId}`, { method: 'POST' }).then(handle),
   deleteVariant: (variantId) => fetch(`/api/twin/variant/${variantId}`, { method: 'DELETE' }).then(handle),
-  speak: async (text) => {
-    const res = await fetch('/api/twin/speak', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || `Request failed (${res.status})`);
-    }
-    return res.blob();
-  },
+  // A plain URL, not a fetch: pointing an <audio src> element straight at
+  // this lets the browser start playing as bytes arrive (the backend
+  // streams rather than buffers) instead of waiting for a full
+  // fetch-then-blob round trip to finish downloading before playback can
+  // even start.
+  getSpeakUrl: (text) => `/api/twin/speak?text=${encodeURIComponent(text)}`,
 
   predictScenario: (scenario) =>
     fetch('/api/twin/scenario', {

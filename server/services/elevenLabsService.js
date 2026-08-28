@@ -52,6 +52,33 @@ export async function synthesizeSpeech({ voiceId, text }) {
   return Buffer.from(arrayBuffer);
 }
 
+// Used for on-demand playback ("Read Aloud" etc.), where perceived latency
+// matters and the caller can play audio as it arrives — unlike
+// synthesizeSpeech above (used for dubbing/video, where the full file has
+// to exist on disk before ffmpeg/HeyGen can use it), this returns the raw
+// response stream instead of buffering the whole thing into memory first.
+export async function synthesizeSpeechStream({ voiceId, text }) {
+  const res = await fetch(`${BASE_URL}/text-to-speech/${voiceId}/stream`, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey(),
+      'Content-Type': 'application/json',
+      Accept: 'audio/mpeg',
+    },
+    body: JSON.stringify({
+      text,
+      model_id: 'eleven_multilingual_v2',
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`ElevenLabs speech synthesis failed (${res.status}): ${body}`);
+  }
+
+  return res.body;
+}
+
 export async function transcribeAudio({ filePath }) {
   const buffer = await readFile(filePath);
   const form = new FormData();
