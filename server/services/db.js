@@ -3,7 +3,11 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, '../../self-mirror.db');
+// DATA_DIR points at a mounted persistent volume in production (the app's
+// own code directory gets wiped and replaced on every deploy, so the
+// database has to live somewhere else to survive redeploys) — falls back to
+// the project root for local development, where that's not a concern.
+const DB_PATH = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'self-mirror.db') : join(__dirname, '../../self-mirror.db');
 
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');

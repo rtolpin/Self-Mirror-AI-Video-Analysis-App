@@ -2,12 +2,16 @@ import { Router } from 'express';
 import multer from 'multer';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { mkdirSync } from 'fs';
 import { unlink } from 'fs/promises';
 import db, { toISO } from '../services/db.js';
 import { transcribeAudio } from '../services/elevenLabsService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-export const UPLOADS_DIR = join(__dirname, '../uploads');
+// Same reasoning as DB_PATH in services/db.js: uploaded files need to live
+// on the persistent volume in production, not the app's own code directory.
+export const UPLOADS_DIR = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'uploads') : join(__dirname, '../uploads');
+mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOADS_DIR),
