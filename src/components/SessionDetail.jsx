@@ -165,30 +165,22 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
     try {
       await api.generateVariants(sessionId, [styleKey]);
       const updated = await load();
-      // One click should be enough: automatically follow up with whichever
-      // real video option is available, instead of waiting for a second,
-      // separate click on the variant that just appeared.
+      // One click should be enough for the fast path: auto-dub if a voice
+      // exists, regardless of whether a video avatar is also set up.
       // voiceOverride covers the moment right after cloning a voice in this
       // same flow: the `hasVoice` prop won't reflect that until the parent's
       // twin-profile refetch re-renders this component with a new prop.
+      //
+      // The synthetic HeyGen render is deliberately NOT auto-triggered here,
+      // even when a video avatar is set up — it takes several minutes and
+      // costs a real render on HeyGen's side, so it's opt-in per style via
+      // the "Generate Video" button on the variant once it appears, rather
+      // than firing automatically for every single chip click.
       const newVariant = updated.variants.find((v) => v.style === styleKey);
       if (newVariant) {
         setScrollToVariantId(newVariant.id);
         const effectiveHasVoice = voiceOverride ?? hasVoice;
-        if (hasVideoAvatar) {
-          // The synthetic HeyGen render is the higher-fidelity result, so
-          // it's what auto-triggers here — dubbing every single generation
-          // as well isn't needed on top of it and just costs an extra
-          // ElevenLabs call each time. Dubbing stays available as an
-          // explicit, optional action instead (see the "Dub With My Voice"
-          // button below), for whoever wants the much-faster fallback while
-          // the several-minutes-long synthetic render is still cooking.
-          handleGenerateVariantVideo(newVariant.id);
-        } else if (effectiveHasVoice) {
-          // No video avatar set up — dubbing is the only real video option,
-          // so it still happens automatically here.
-          await handleDubVariantVideo(newVariant.id);
-        }
+        if (effectiveHasVoice) await handleDubVariantVideo(newVariant.id);
       }
     } catch (err) {
       setError(err.message);
@@ -461,11 +453,11 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
                           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Dubbing…
                         </span>
                       ) : (
-                        // Optional and secondary on purpose: the synthetic
-                        // video above is the primary path when available, so
-                        // this fast-but-lower-fidelity option (real footage,
-                        // swapped audio) is here for whoever wants it sooner
-                        // rather than something that runs automatically.
+                        // Dubbing already auto-runs the moment a style with
+                        // a cloned voice is generated (see
+                        // handleGenerateVariant) — this manual button is for
+                        // redoing it (e.g. after a failure) or for variants
+                        // generated before a voice existed.
                         <button
                           onClick={() => handleDubVariantVideo(v.id)}
                           className="text-white/50 hover:text-white flex items-center gap-1 text-xs"
