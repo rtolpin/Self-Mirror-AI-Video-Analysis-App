@@ -24,20 +24,30 @@
 
 A personal self-reflection tool: record yourself for a specific context (a date, a job interview, a presentation), get an honest AI read on how you came across, build an **AI Twin** of your personality and speech patterns, hear or watch yourself say things in different registers, and ask your twin how you'd likely react to a situation.
 
+## 🧭 How to use it
+
+1. Open the [live app](https://self-mirror-app-production.up.railway.app) and click **Continue As Guest** — no signup, every feature works immediately. (Click **Create Account To Save** in the header any time to turn your guest session into a permanent account.)
+2. Click **New Session**, pick or type what you're preparing for, and record a short clip of yourself.
+3. Once it saves, your **Honest Analysis** appears automatically — no button to press. Read the critique: sentiment, a confidence score, body-language notes, and concrete strengths/growth areas.
+4. Scroll down to **Try Different Versions Of You** and tap any of the 50+ style chips — the same thing you said, rewritten in that register, narrated in your own voice (and rendered as a full synthetic video) if you've set those up in **My Twin**.
+5. After a session or two, open the **My Twin** tab — your personality profile builds itself automatically; there's nothing to click.
+6. Explore **Life Paths** for AI-suggested professions/cities/activities based on your twin, or use **Ask My Twin** to predict how you'd react to any situation you describe.
+
 ## ✨ What it does
 
-### 🎥 Record & Analyze
+### 🎥 Honest Analysis
 - Choose an occasion (search presets like "job interview" or type your own), record a short webcam clip in the browser (`MediaRecorder` + `getUserMedia`), and it's transcribed automatically, server-side, by ElevenLabs' speech-to-text — deliberately not the browser's built-in `SpeechRecognition` API, whose support is inconsistent (Firefox doesn't implement it at all, Safari's is unreliable).
-- The moment a recording finishes saving, Claude (with vision) reviews a handful of extracted frames alongside the transcript and returns a structured critique — overall sentiment, a 1–10 confidence score, body-language notes, concrete strengths, concrete growth areas, and a note on fit for the occasion — no separate "Analyze" click required.
+- The moment a recording finishes saving, Claude (with vision) reviews a handful of extracted frames alongside the transcript and returns a structured critique, shown under the **"Honest Analysis"** heading on the session page: overall sentiment, a 1–10 confidence score, body-language notes, concrete strengths, concrete growth areas, and a note on fit for the occasion — no separate "Analyze" click required.
+
+### 🎭 Try Different Versions Of You
+This is the app's centerpiece — it lives directly under Honest Analysis on the same session page, so it's the very next thing you see after reading your critique.
+- Rewrites your actual transcript into 50+ named styles, each backed by its own instruction sent to Claude — dial personality traits up or down (More/Less Confident, More Aggressive, Self-Aware, Vulnerable...), try on professional personas (Consultant, Big Boss, Manager, Intern...), or shift along communication-style axes grounded in real linguistics research rather than stereotypes (see the note below). Tap any chip and the rewrite appears in a few seconds.
+- **Two tiers of video, generated automatically, in order of speed:** if you've cloned your voice (in **My Twin**), the rewritten text is synthesized and muxed onto your original footage as new audio (fast — a few seconds, via `ffmpeg`) so there's something real to watch immediately. If you've also unlocked a video avatar, a fully synthetic re-render kicks off in the background at the same time; HeyGen's rendering typically takes several minutes, so the fast dub stays visible with a live "still rendering" indicator and is automatically swapped out for the synthetic version the moment it finishes — no polling or refreshing needed on your end.
 
 ### 🧬 AI Twin
 - Claude synthesizes a personality/speech profile from everything you've recorded so far: core traits, recurring phrases, thought-process style, values, and communication tendencies.
 - The build used to only trigger if you visited the "My Twin" tab and clicked a button. It now fires automatically the moment you have at least one recorded session and no profile yet, triggered once at the top of the app rather than inside any single screen — so **Life Paths** and **Ask My Twin**, which both require a built profile, show a live "Building your twin…" state and unlock the instant it's ready, instead of a stale "nothing here yet."
-- Optionally clone your voice (ElevenLabs) so any generated text can be spoken back in your own voice, and optionally complete a HeyGen live-webcam consent step to unlock a synthetic **digital-twin video avatar** — a fully rendered version of you that can visually "say" anything you generate.
-
-### 🎭 Try Different Versions Of You
-- Rewrites your actual transcript into 50+ named styles, each backed by its own instruction sent to Claude — dial personality traits up or down (More/Less Confident, More Aggressive, Self-Aware, Vulnerable...), try on professional personas (Consultant, Big Boss, Manager, Intern...), or shift along communication-style axes grounded in real linguistics research rather than stereotypes (see the note below).
-- **Two tiers of video, generated automatically, in order of speed:** if you've cloned your voice, the rewritten text is synthesized and muxed onto your original footage as new audio (fast — a few seconds, via `ffmpeg`) so there's something real to watch immediately. If you've also unlocked a video avatar, a fully synthetic re-render kicks off in the background at the same time; HeyGen's rendering typically takes several minutes, so the fast dub stays visible with a live "still rendering" indicator and is automatically swapped out for the synthetic version the moment it finishes — no polling or refreshing needed on your end.
+- Optionally clone your voice (ElevenLabs) so any generated text can be spoken back in your own voice, and optionally complete a HeyGen live-webcam consent step to unlock a synthetic **digital-twin video avatar** — a fully rendered version of you that can visually "say" anything you generate. Both of these unlock the two video tiers described above.
 
 ### 🧭 Life Paths
 - Asks Claude to suggest professions, cities, and activities that plausibly fit your AI Twin's actual observed traits, each with a one-line rationale — framed explicitly as possibilities worth exploring, not a verdict.
