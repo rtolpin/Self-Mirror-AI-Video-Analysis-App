@@ -8,6 +8,16 @@ function apiKey() {
   return key;
 }
 
+// Bracketed stage directions like "[laughs]" or "[chuckles]" sometimes show
+// up in transcripts or in Claude's rewritten text, but eleven_multilingual_v2
+// (the model used here) doesn't treat them as non-verbal cues the way
+// newer "audio tag" models do — it just reads the words inside the
+// brackets aloud, which is never what's intended. Stripped once here so
+// every caller (dubbing, synthetic-video audio, Read Aloud) is covered.
+function stripStageDirections(text) {
+  return (text || '').replace(/\[[^\]]*\]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
 export async function cloneVoice({ audioFilePath, name }) {
   const buffer = await readFile(audioFilePath);
   const form = new FormData();
@@ -38,7 +48,7 @@ export async function synthesizeSpeech({ voiceId, text }) {
       Accept: 'audio/mpeg',
     },
     body: JSON.stringify({
-      text,
+      text: stripStageDirections(text),
       model_id: 'eleven_multilingual_v2',
     }),
   });
@@ -66,7 +76,7 @@ export async function synthesizeSpeechStream({ voiceId, text }) {
       Accept: 'audio/mpeg',
     },
     body: JSON.stringify({
-      text,
+      text: stripStageDirections(text),
       model_id: 'eleven_multilingual_v2',
     }),
   });
