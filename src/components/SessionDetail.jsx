@@ -382,6 +382,15 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
           </p>
         </div>
 
+        {generatingStyle && (
+          <div className="flex items-center gap-2.5 border-2 border-violet-400/50 bg-violet-400/10 rounded-xl px-3.5 py-2.5 mb-3">
+            <Loader2 className="w-4 h-4 text-violet-300 shrink-0 animate-spin" />
+            <p className="text-sm font-semibold text-violet-100 leading-snug">
+              Generating your video as {STYLE_LABELS[generatingStyle] || generatingStyle}…
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4">
           {Object.entries(STYLE_LABELS).map(([key, label], i) => {
             const palette = CHIP_PALETTES[i % CHIP_PALETTES.length];
@@ -391,7 +400,7 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
               <button
                 key={key}
                 onClick={() => handleChipClick(key)}
-                disabled={isGenerating}
+                disabled={!!generatingStyle}
                 className={`relative text-sm px-4 py-3 rounded-xl border-2 font-semibold text-center transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none ${
                   alreadyGenerated ? palette.active : palette.idle
                 }`}
