@@ -44,6 +44,11 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
   const [dubbingVariantId, setDubbingVariantId] = useState(null);
   const [pendingStyleKey, setPendingStyleKey] = useState(null);
   const [showCloneModal, setShowCloneModal] = useState(false);
+  // Set when a dub/video-generation call 404s because the cloned voice
+  // itself is gone from ElevenLabs (see server VoiceNotFoundError) — reuses
+  // CloneVoiceModal to get a fresh voice, then retries the same action
+  // instead of just leaving the user with a dead-end error message.
+  const [staleVoiceRetry, setStaleVoiceRetry] = useState(null); // { variantId, kind: 'dub' | 'video' }
   const [confirmTarget, setConfirmTarget] = useState(null); // { type: 'session' } | { type: 'variant', id }
   const [scrollToVariantId, setScrollToVariantId] = useState(null);
   const autoAnalyzedRef = useRef(false);
@@ -111,6 +116,11 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
       await api.generateVariantVideo(variantId);
       await load();
     } catch (err) {
+      if (err.code === 'voice_not_found') {
+        localStorage.removeItem(VOICE_CONSENT_KEY);
+        setStaleVoiceRetry({ variantId, kind: 'video' });
+        return;
+      }
       setError(err.message);
     }
   }
@@ -122,6 +132,11 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
       await api.dubVariantVideo(variantId);
       await load();
     } catch (err) {
+      if (err.code === 'voice_not_found') {
+        localStorage.removeItem(VOICE_CONSENT_KEY);
+        setStaleVoiceRetry({ variantId, kind: 'dub' });
+        return;
+      }
       setError(err.message);
     } finally {
       setDubbingVariantId(null);
@@ -636,6 +651,20 @@ export default function SessionDetail({ sessionId, hasVoice, hasVideoAvatar, vid
           const styleKey = pendingStyleKey;
           setPendingStyleKey(null);
           handleGenerateVariant(styleKey, { voiceOverride: true });
+        }}
+      />
+
+      <CloneVoiceModal
+        open={!!staleVoiceRetry}
+        styleLabel={STYLE_LABELS[session?.variants?.find((v) => v.id === staleVoiceRetry?.variantId)?.style] || 'this style'}
+        onClose={() => setStaleVoiceRetry(null)}
+        onCloned={onVoiceCloned}
+        onGenerate={() => {
+          const retry = staleVoiceRetry;
+          setStaleVoiceRetry(null);
+          localStorage.setItem(VOICE_CONSENT_KEY, 'true');
+          if (retry.kind === 'dub') handleDubVariantVideo(retry.variantId);
+          else handleGenerateVariantVideo(retry.variantId);
         }}
       />
 

@@ -1,7 +1,9 @@
 async function handle(res) {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed (${res.status})`);
+    const err = new Error(body.error || `Request failed (${res.status})`);
+    if (body.code) err.code = body.code;
+    throw err;
   }
   return res.json();
 }

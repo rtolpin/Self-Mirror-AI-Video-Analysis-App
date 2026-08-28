@@ -211,7 +211,7 @@ router.get('/speak', async (req, res) => {
   } catch (err) {
     if (err instanceof VoiceNotFoundError) {
       clearStaleVoice(req.userId);
-      return res.status(400).json({ error: STALE_VOICE_MESSAGE });
+      return res.status(400).json({ error: STALE_VOICE_MESSAGE, code: 'voice_not_found' });
     }
     res.status(500).json({ error: err.message });
   }
@@ -245,7 +245,7 @@ router.post('/variant-video/:variantId', async (req, res) => {
     db.prepare('UPDATE variants SET video_status = ? WHERE id = ?').run('failed', variant.id);
     if (err instanceof VoiceNotFoundError) {
       clearStaleVoice(req.userId);
-      return res.status(400).json({ error: STALE_VOICE_MESSAGE });
+      return res.status(400).json({ error: STALE_VOICE_MESSAGE, code: 'voice_not_found' });
     }
     res.status(500).json({ error: err.message });
   } finally {
@@ -319,7 +319,7 @@ router.post('/variant-dub/:variantId', async (req, res) => {
   } catch (err) {
     if (err instanceof VoiceNotFoundError) {
       clearStaleVoice(req.userId);
-      return res.status(400).json({ error: STALE_VOICE_MESSAGE });
+      return res.status(400).json({ error: STALE_VOICE_MESSAGE, code: 'voice_not_found' });
     }
     res.status(500).json({ error: err.message });
   } finally {
