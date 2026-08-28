@@ -27,27 +27,27 @@ A personal self-reflection tool: record yourself for a specific context (a date,
 ## ✨ What it does
 
 ### 🎥 Record & Analyze
-- Pick what you're preparing for (search common occasions or type your own) and record a short video of yourself, or skip straight to a general self-analysis.
-- The clip is transcribed server-side automatically (via ElevenLabs Scribe — works consistently across every browser, unlike the browser's built-in speech APIs).
-- Claude looks at a few frames plus the transcript and gives an honest, specific, constructive read: overall sentiment, a confidence score, body-language notes, strengths, growth areas, and how well it fits the stated context.
+- Choose an occasion (search presets like "job interview" or type your own), record a short webcam clip in the browser (`MediaRecorder` + `getUserMedia`), and it's transcribed automatically, server-side, by ElevenLabs' speech-to-text — deliberately not the browser's built-in `SpeechRecognition` API, whose support is inconsistent (Firefox doesn't implement it at all, Safari's is unreliable).
+- The moment a recording finishes saving, Claude (with vision) reviews a handful of extracted frames alongside the transcript and returns a structured critique — overall sentiment, a 1–10 confidence score, body-language notes, concrete strengths, concrete growth areas, and a note on fit for the occasion — no separate "Analyze" click required.
 
 ### 🧬 AI Twin
-- Builds a personality/speech-pattern profile from everything you've recorded — core traits, speech patterns, common phrases, thought-process style, values, communication tendencies.
-- Builds itself automatically the moment you have a recorded session and no twin yet (no button-hunting required), and updates incrementally as you record more.
-- Optionally clone your own voice (ElevenLabs) so any generated text can be played back in your own voice, and optionally set up a synthetic video avatar (HeyGen digital twin) for a fully rendered talking version of you.
+- Claude synthesizes a personality/speech profile from everything you've recorded so far: core traits, recurring phrases, thought-process style, values, and communication tendencies.
+- The build used to only trigger if you visited the "My Twin" tab and clicked a button. It now fires automatically the moment you have at least one recorded session and no profile yet, triggered once at the top of the app rather than inside any single screen — so **Life Paths** and **Ask My Twin**, which both require a built profile, show a live "Building your twin…" state and unlock the instant it's ready, instead of a stale "nothing here yet."
+- Optionally clone your voice (ElevenLabs) so any generated text can be spoken back in your own voice, and optionally complete a HeyGen live-webcam consent step to unlock a synthetic **digital-twin video avatar** — a fully rendered version of you that can visually "say" anything you generate.
 
 ### 🎭 Try Different Versions Of You
-- Rewrites what you actually said in 50+ styles — personality axes (More/Less Confident, More Aggressive/Happiness/Sadness, Self-Aware, Humble, Vulnerable...), professional personas (Consultant, Big Boss, Manager, Intern, Businessman/Business Woman...), and communication-style axes grounded in real linguistics research rather than stereotypes (Direct & To-the-Point vs. Warm & Expressive, Values-Led vs. Pragmatic) — see "A note on the persona list" below.
-- If you've cloned your voice, generation automatically narrates the result in your own voice (dubbed over your original footage) or, if you've set up a video avatar, kicks off a fully synthetic re-recording of you saying it — HeyGen's rendering can take several minutes, so the fast dub shows immediately as a placeholder while the synthetic version renders in the background and swaps in automatically.
+- Rewrites your actual transcript into 50+ named styles, each backed by its own instruction sent to Claude — dial personality traits up or down (More/Less Confident, More Aggressive, Self-Aware, Vulnerable...), try on professional personas (Consultant, Big Boss, Manager, Intern...), or shift along communication-style axes grounded in real linguistics research rather than stereotypes (see the note below).
+- **Two tiers of video, generated automatically, in order of speed:** if you've cloned your voice, the rewritten text is synthesized and muxed onto your original footage as new audio (fast — a few seconds, via `ffmpeg`) so there's something real to watch immediately. If you've also unlocked a video avatar, a fully synthetic re-render kicks off in the background at the same time; HeyGen's rendering typically takes several minutes, so the fast dub stays visible with a live "still rendering" indicator and is automatically swapped out for the synthetic version the moment it finishes — no polling or refreshing needed on your end.
 
 ### 🧭 Life Paths
-- Suggests professions, cities, and activities grounded in your AI Twin's actual observed traits — a set of possibilities to consider, not a single "right answer."
+- Asks Claude to suggest professions, cities, and activities that plausibly fit your AI Twin's actual observed traits, each with a one-line rationale — framed explicitly as possibilities worth exploring, not a verdict.
 
 ### 💬 Ask My Twin
-- Describe a real or hypothetical situation and get a grounded prediction of how you'd likely react, based on patterns observed across your sessions, plus a confidence level and reasoning.
+- Describe a real or hypothetical scenario, and Claude predicts how you'd likely react, grounded in your twin profile and past session analyses, along with its own stated confidence level and the reasoning behind the prediction.
 
 ### 👤 Accounts
-- Real email/password accounts, or **try the whole app as a guest with no signup** — guest data is fully functional but temporary (auto-deleted after 24 hours), with a one-click upgrade path to a real account that preserves everything already created under it.
+- Sign up with an email and password, or click **Continue As Guest** to use every feature immediately with no signup at all. Guest accounts are ordinary accounts under the hood — same data model, same permissions — just flagged temporary: automatically deleted (database rows and uploaded files both) 24 hours after creation. A one-click **Create Account To Save** converts a guest into a permanent account in place, keeping everything already recorded under it — no data migration needed, since it's the same underlying account.
+- Every account's data is isolated at the database query level: every session, twin profile, and uploaded file is scoped to the authenticated user's ID on every read and write. This was verified directly, not just assumed from code review — a second test account was confirmed unable to read or fetch another account's session data or video files.
 
 ### 📝 A note on the persona list
 The original spec for this app included personas framed around nationality and religion. Those were deliberately left out and replaced with personality- and communication-style axes instead — real, individually-variable dimensions from communication research, rather than personas built on stereotypes tied to someone's ethnicity, nationality, or religion. The same care was applied to newer additions like Affluent/Impoverished: framed around resource-consciousness and outlook, not caricatured speech patterns.
@@ -82,7 +82,8 @@ server/
                          variant video/dub generation, life paths, scenarios
     data.js              full per-user data wipe
   services/
-    db.js                schema + migrations, all SQL access
+    db.js                schema + migrations, all SQL access,
+                         including the guest-account cleanup query
     authService.js        password hashing, session token sign/verify
     claudeService.js       all Claude prompts (analysis, twin, variants,
                             life paths, scenario prediction) + style guide list
