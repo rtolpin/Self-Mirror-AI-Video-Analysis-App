@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Consent Complete</title>
+<style>
+  body {
+    background: #0a0a0f;
+    color: #d4d4d8;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+    padding: 1.5rem;
+  }
+</style>
+</head>
+<body>
+  <p>Consent complete — this window will close automatically. You can also close it yourself.</p>
+  <script>
+    // HeyGen redirects the popup here once the live consent check is done.
+    // This window only exists to run that check, so its only job now is to
+    // close itself rather than load the app a second time inside a tiny
+    // popup — the opener (self-mirror-app) polls window.closed to know when
+    // to refresh consent status.
+    window.close();
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Video Consent</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    background: #0a0a0f;
+    color: #e4e4e7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 1.75rem;
+    box-sizing: border-box;
+  }
+  .card { max-width: 380px; }
+  h1 {
+    font-size: 1.15rem;
+    margin: 0 0 0.75rem;
+    background: linear-gradient(90deg, #34d399, #38bdf8, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  p { font-size: 0.875rem; line-height: 1.5; color: #a1a1aa; margin: 0 0 0.9rem; }
+  ol { padding-left: 1.1rem; margin: 0 0 1.1rem; }
+  li { font-size: 0.875rem; line-height: 1.6; color: #d4d4d8; margin-bottom: 0.4rem; }
+  .why {
+    border-left: 3px solid rgba(52, 211, 153, 0.5);
+    background: rgba(52, 211, 153, 0.06);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.8rem;
+    color: #a1a1aa;
+    margin-bottom: 1.25rem;
+  }
+  button {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 0.6rem;
+    border: none;
+    background: #34d399;
+    color: #000;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button:hover { background: #6ee7b7; }
+  .note { font-size: 0.75rem; color: #71717a; margin-top: 0.9rem; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>One More Step: Live Video Consent</h1>
+    <p>You're about to be taken to HeyGen's own secure page to record a short live consent video. Here's what to expect:</p>
+    <ol>
+      <li>Allow camera access when your browser asks.</li>
+      <li>Read the on-screen phrase out loud, clearly and naturally.</li>
+      <li>A short code will appear on screen at the end — repeat it out loud too.</li>
+    </ol>
+    <div class="why">
+      Why: this proves a real person is present and consenting right now, so no one can create a synthetic video of
+      someone without them actually being there. It's not something this app can do on your behalf.
+    </div>
+    <button id="continue">Continue to HeyGen →</button>
+    <p class="note">This window will close itself automatically once you're done.</p>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const dest = params.get('to');
+    document.getElementById('continue').addEventListener('click', () => {
+      if (dest) window.location.href = decodeURIComponent(dest);
+    });
+  </script>
+</body>
+</html>
