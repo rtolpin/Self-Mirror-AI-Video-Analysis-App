@@ -1,4 +1,4 @@
-# Self-Mirror
+# Self-Mirror App
 
 A personal self-reflection tool: record yourself for a specific context (a date, a job interview, a presentation), get an honest AI read on how you came across, build an "AI Twin" of your personality and speech patterns, hear or watch yourself say things in different registers, and ask your twin how you'd likely react to a situation.
 
