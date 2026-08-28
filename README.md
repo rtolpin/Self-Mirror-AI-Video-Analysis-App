@@ -4,7 +4,7 @@
 
 **Record yourself. Get an honest AI read. Meet your AI Twin. See yourself in 50+ styles.**
 
-### 🚀 [**Open The Live App →**](https://self-mirror-app-production.up.railway.app)
+### 🚀 [**Open The Live App →** self-mirror-app-production.up.railway.app](https://self-mirror-app-production.up.railway.app)
 
 [![Live App](https://img.shields.io/badge/Live%20App-self--mirror--app--production.up.railway.app-brightgreen?style=for-the-badge&logo=railway&logoColor=white)](https://self-mirror-app-production.up.railway.app)
 
